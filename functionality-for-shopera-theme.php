@@ -16,7 +16,7 @@
  * Plugin Name:       Functionality for Shopera theme
  * Plugin URI:        http://cohhe.com/
  * Description:       This plugin contains Shopera theme core functionality
- * Version:           1.1
+ * Version:           1.2
  * Author:            Cohhe
  * Author URI:        http://cohhe.com/
  * License:           GPL-2.0+
@@ -36,7 +36,7 @@ if ( ! defined( 'WPINC' ) ) {
  */
 function shopera_activate_shopera_func() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-shopera-functionality-activator.php';
-	shopera_func_Activator::activate();
+	shopera_func_Activator::shopera_activate();
 }
 
 /**
@@ -45,7 +45,7 @@ function shopera_activate_shopera_func() {
  */
 function shopera_deactivate_shopera_func() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-shopera-functionality-deactivator.php';
-	shopera_func_Deactivator::deactivate();
+	shopera_func_Deactivator::shopera_deactivate();
 }
 
 register_activation_hook( __FILE__, 'shopera_activate_shopera_func' );
@@ -93,7 +93,7 @@ function shopera_woo_add_brand_slider( $atts, $content = null ) {
 	}
 
 	$output .= '
-	<div class="brand-carousel-main">
+	<div class="brand-carousel-main paint-area">
 		<div class="brand-carousel-container">
 			<div class="brand-carousel">';
 				foreach ($brand_ids as $brand_value) {
@@ -172,19 +172,28 @@ function shopera_woo_featured_categories( $atts, $content = null ) {
 add_shortcode('woo_featured_categories','shopera_woo_featured_categories');
 
 function shopera_get_woo_categories( $post_id, $category_slug ) {
-	$cat_post = get_post( $post_id );
-	$cat_excerpt = $cat_post->post_excerpt;
+	if (strpos($post_id,'|') !== false) {
+		$cat_data = explode('|', $post_id);
+		$cat_excerpt = $cat_data['2'];
+		$cat_title = $cat_data['1'];
+		$slide_image_url = wp_get_attachment_image_src( $cat_data['0'], 'shopera-huge-width' );
+		$cat_img = $slide_image_url[0];
+	} else {
+		$cat_post = get_post( $post_id );
+		$cat_excerpt = $cat_post->post_excerpt;
+		$cat_title = get_the_title($post_id);
+		$slide_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'shopera-huge-width' );
+		$cat_img = $slide_image_url[0];
+	}
+
 	$output = '';
 
 	$output .= '<div class="woo-category-item">';
-		$slide_image_url = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'shopera-huge-width' );
-		$output .= '<div class="woo-category-image" style="background-image:url('.$slide_image_url[0].');"></div>';
-		$output .= '<div class="woo-category-inner">';
-			$output .= '<span class="woo-category-title paint-area paint-area--text">'.get_the_title($post_id);
-			$output .= '<br /><span class="woo-category-excerpt">-'.$cat_excerpt.'-</span>';
-			$output .= '</span>';
-		$output .= '</div>';
-		$output .= '<a href="'.esc_url(site_url()).'/?product_cat='.esc_attr($category_slug).'"></a>';
+		$output .= '<div class="woo-category-image" style="background-image:url('.$cat_img.');"></div>';
+		$output .= '<a href="'.esc_url(site_url()).'/?product_cat='.esc_attr($category_slug).'" class="woo-category-inner">';
+			$output .= '<span class="woo-category-title paint-area paint-area--text">'.$cat_title.'</span>';
+			$output .= '<span class="woo-category-excerpt paint-area paint-area--text">-'.$cat_excerpt.'-</span>';
+		$output .= '</a>';
 	$output .= '</div>';
 
 	echo $output;
